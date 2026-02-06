@@ -8,7 +8,7 @@
         class="modal-title"
     >
       <i>warning</i>
-      <h5>Missing third party tools</h5>
+      <h5>Missing third-party media tools</h5>
     </div>
 
     <div
@@ -16,14 +16,14 @@
         class="modal-title"
     >
       <i>download</i>
-      <h5>Downloading third party tools</h5>
+      <h5>Downloading third-party media tools</h5>
     </div>
 
     <div
         v-if="!modBinDL.isDownloading"
         class="modal-desc"
     >
-      <span>Following essential third party tools seems to be missing.</span>
+      <span>Following essential third-party media processing tools seems to be missing.</span>
       <ul>
         <li v-for="bin of store.missingTools">{{ mediaTools[bin].name }}</li>
       </ul>
