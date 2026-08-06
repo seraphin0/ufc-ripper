@@ -28,6 +28,8 @@ pub struct UFCRConfig {
     pub port: u16,
     pub verbose_logging: bool,
     pub api_key: String,
+    pub api_version: String,
+    pub net_agent: String,
     #[serde(rename = "searchAPIKey")]
     pub search_api_key: String,
     pub region: String,
@@ -66,6 +68,8 @@ impl Default for UFCRConfig {
             port: 8383,
             verbose_logging: false,
             api_key: "857a1e5d-e35e-4fdf-805b-a87b6f8364bf".into(),
+            api_version: "6.0.1.f8add0e".into(),
+            net_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36".into(),
             search_api_key: "e55ccb3db0399eabe2bfc37a0314c346".into(),
             region: "dce.ufc".into(),
             user: String::new(),

@@ -644,8 +644,15 @@ fn generate_fight_pass_api_headers() -> anyhow::Result<HeaderMap> {
 
     headers.insert("app", "dice".parse().context(err_msg)?);
     headers.insert("Realm", get_config().region.parse().context(err_msg)?);
-    headers.insert("x-app-var", "6.0.1.f8add0e".parse().context(err_msg)?);
+    headers.insert(
+        "x-app-var",
+        get_config().api_version.parse().context(err_msg)?,
+    );
     headers.insert("x-api-key", get_config().api_key.parse().context(err_msg)?);
+    headers.insert(
+        header::USER_AGENT,
+        get_config().net_agent.parse().context(err_msg)?,
+    );
 
     Ok(headers)
 }
