@@ -92,6 +92,7 @@ jobs:
         with:
           name: linux-x64-assets
           path: package/linux/
+          if-no-files-found: error
       # Upload Linux arm64 build to artifacts
       - if: matrix.arch_alias == 'linux-arm64'
         name: Upload Linux arm64 artifacts
@@ -99,6 +100,7 @@ jobs:
         with:
           name: linux-arm64-assets
           path: package/linux/
+          if-no-files-found: error
 
   docker-publish:
     name: Build and publish image to Docker Hub
