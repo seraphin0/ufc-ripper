@@ -13,15 +13,15 @@
     <a href="https://hub.docker.com/r/m4heshd/ufc-ripper">
         <img src="https://img.shields.io/docker/pulls/m4heshd/ufc-ripper?logo=docker&color=0db7ed&style=for-the-badge" alt="ufc-ripper on Docker Hub">
     </a> <!--Docker-->
-    <a href="https://github.com/m4heshd/ufc-ripper/blob/master/LICENSE">
-        <img src="https://img.shields.io/github/license/m4heshd/ufc-ripper?color=41b883&style=for-the-badge" alt="ufc-ripper license">
-    </a> <!--License-->
-    <a href="https://paypal.variatix.net">
-        <img src="https://img.shields.io/static/v1?logo=paypal&label=%E2%80%8B&message=PayPal&color=blue&style=for-the-badge" alt="PayPal">
-    </a> <!--PayPal-->
+    <a href="https://github.com/sponsors/m4heshd">
+        <img src="https://img.shields.io/static/v1?logo=github&label=%E2%80%8B&message=Donate&color=blue&style=for-the-badge" alt="Sponsor on GitHub">
+    </a> <!--GitHub Sponsors-->
     <a href="https://ko-fi.variatix.net">
         <img src="https://img.shields.io/static/v1?logo=ko-fi&label=%E2%80%8B&message=Ko-fi&color=ff5e5b&style=for-the-badge" alt="Ko-fi">
     </a> <!--Ko-fi-->
+    <a href="https://github.com/m4heshd/ufc-ripper/blob/master/LICENSE">
+        <img src="https://img.shields.io/github/license/m4heshd/ufc-ripper?color=41b883&style=for-the-badge" alt="ufc-ripper license">
+    </a> <!--License-->
     <br>
     <br>
     <a href="https://t.me/+1aacMrVWdr1jOWY1">
@@ -81,18 +81,21 @@ improve a lot. Working on this project and testing on all targets requires a lot
 You can help me by buying me a few coffees ☕, so I'm all buzzed up and got time to work on this further.
 Or you can send a few monies my way to simply say thanks for the work that's already been done.
 
-**Wise is the preferred method for donations because PayPal takes a huge chunk (~22%) off of every
-donation _(ko-fi also uses PayPal)_.**
+The best way for you to support me is via [GitHub Sponsors](https://github.com/sponsors/m4heshd), even for one-time
+donations, because they don't keep a share. Everything you donate goes to the developer.
+
+[![Donate on GitHub](https://i.ibb.co/MD20Myt2/Donate-on-Git-Hub.png)](https://github.com/sponsors/m4heshd)
 
 [![Donate to m4heshd on Wise](https://i.ibb.co/s9nT2hfp/donate-on-wise.png)](https://wise.variatix.net/)
 
 Other donation methods:
 
-[![Donate to m4heshd](https://i.ibb.co/8PgVcwK/Paypal.png)](https://paypal.variatix.net)
+**PayPal is not a preferred method of donation because they take a huge chunk (~22%) off of every
+donation _(ko-fi also uses PayPal)_.**
 
-Or you can buy me a "ko-fi" by clicking this button
+[![ko-fi](https://i.ibb.co/QmQknmc/ko-fi.png)](https://ko-fi.variatix.net/)
 
-[![ko-fi](https://i.ibb.co/QmQknmc/ko-fi.png)](https://ko-fi.variatix.net)
+[![Donate to m4heshd](https://i.ibb.co/8PgVcwK/Paypal.png)](https://paypal.variatix.net/)
 
 # Join the conversation 💬
 
@@ -268,9 +271,11 @@ You can change this behavior by editing the port in `config.json`, `frontend/.en
 
 **To package the application for production,**
 
-1. Run `npm run build:backend:win32` or `npm run build:backend:linux` to build both the frontend and the backend
+1. Run `npm run build:backend:win32`, `npm run build:backend:linux` or `npm run build:backend:macos` to build both the
+   frontend and the backend
 
-2. Run `npm run pack:win32` or `npm run pack:linux` (packaging process is NOT cross-platform compatible)
+2. Run `npm run pack:win32`, `npm run pack:linux` or `npm run pack:macos` (packaging process is NOT cross-platform
+   compatible)
 
 **To build and run the Docker container,**
 
