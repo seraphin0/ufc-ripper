@@ -475,16 +475,34 @@ pub async fn search_vods(query: &str, page: u64) -> anyhow::Result<JSON> {
     }
 }
 
-/// Retrieves metadata for the given Fight Pass VOD.
-pub async fn get_vod_meta(url: &str) -> anyhow::Result<Vod> {
+/// Retrieves the complete manifest for the given Fight Pass VOD.
+pub async fn get_vod_manifest(vod_id: u64, streams: bool) -> anyhow::Result<JSON> {
     enum ReqStatus {
         Success(JSON),
         NeedsRefresh,
     }
 
-    let vod_id = get_vod_id_from_url(url)?;
+    let req_body = if streams {
+        json!({
+            "mediaCapabilities": [
+                {
+                    "protocols": [
+                        "HLS"
+                    ],
+                    "audioCodecs": [
+                        "aac"
+                    ],
+                    "videoCodecs": [
+                        "h264"
+                    ]
+                }
+            ]
+        })
+    } else {
+        json!({})
+    };
 
-    // Runs the metadata request and returns the status of that request.
+    // Runs the manifest request and returns the status of that request.
     // Having this as a closure allows this process to be run multiple times.
     let run_request = || async {
         let client = if get_config().use_proxy {
@@ -494,19 +512,20 @@ pub async fn get_vod_meta(url: &str) -> anyhow::Result<Vod> {
         };
 
         let resp = client
-            .get(format!(
-                "https://dce-frontoffice.imggaming.com/api/v2/vod/{vod_id}"
+            .post(format!(
+                "https://dce-frontoffice.imggaming.com/api/v5/manifest/video/{vod_id}"
             ))
             .headers(generate_fight_pass_api_headers()?)
             .bearer_auth(&get_config().auth_token)
+            .json(&req_body)
             .send()
             .await
-            .context("An error occurred while trying fetch VOD metadata")?;
+            .context("An error occurred while trying fetch VOD manifest")?;
 
         let status = resp.status();
 
         if !status.is_success() {
-            let err_msg = "An unknown error occurred while trying fetch VOD metadata";
+            let err_msg = "An unknown error occurred while trying fetch VOD manifest";
 
             return match status.as_u16() {
                 401 => {
@@ -531,47 +550,18 @@ pub async fn get_vod_meta(url: &str) -> anyhow::Result<Vod> {
         let json_body: JSON = resp
             .json()
             .await
-            .context("VOD metadata response contains invalid data")?;
+            .context("VOD manifest response contains invalid data")?;
 
         Ok::<ReqStatus, anyhow::Error>(ReqStatus::Success(json_body))
     };
 
-    // Creates and returns a `Vod` instance from JSON
-    let create_vod_from_json_meta = |meta: &JSON| {
-        let err_msg = "VOD metadata response does not match the expected format";
-        let vod = Vod {
-            id: meta.try_get("id").as_u64().context(err_msg)?,
-            title: meta
-                .try_get("title")
-                .as_str()
-                .context(err_msg)?
-                .to_string()
-                .replace(':', " -"),
-            desc: meta
-                .try_get("description")
-                .as_str()
-                .context(err_msg)?
-                .to_string(),
-            thumb: meta
-                .try_get("thumbnailUrl")
-                .as_str()
-                .context(err_msg)?
-                .to_string(),
-            access: meta.try_get("accessLevel").as_str().context(err_msg)? != "DENIED",
-            vod_url: url.to_string(),
-            ..Vod::default()
-        };
-
-        Ok::<Vod, anyhow::Error>(vod)
-    };
-
     match run_request().await? {
-        ReqStatus::Success(vod_meta) => Ok(create_vod_from_json_meta(&vod_meta)?),
+        ReqStatus::Success(vod_meta) => Ok(vod_meta),
         ReqStatus::NeedsRefresh => {
             refresh_access_token().await?;
 
             match run_request().await? {
-                ReqStatus::Success(vod_meta) => Ok(create_vod_from_json_meta(&vod_meta)?),
+                ReqStatus::Success(vod_meta) => Ok(vod_meta),
                 ReqStatus::NeedsRefresh => Err(anyhow!(
                     r#"The server responded to the request as "Unauthorized". Please try logging in with your UFC Fight Pass account again"#
                 )),
@@ -580,60 +570,49 @@ pub async fn get_vod_meta(url: &str) -> anyhow::Result<Vod> {
     }
 }
 
+/// Retrieves metadata for the given Fight Pass VOD.
+pub async fn get_vod_meta(url: &str) -> anyhow::Result<Vod> {
+    let vod_id = get_vod_id_from_url(url)?;
+    let meta = get_vod_manifest(vod_id.parse().context("Invalid VOD ID received")?, false).await?;
+    let err_msg = "VOD manifest response does not match the expected format";
+
+    Ok(Vod {
+        id: meta.try_get("id").as_u64().context(err_msg)?,
+        title: meta
+            .try_get("title")
+            .as_str()
+            .context(err_msg)?
+            .to_string()
+            .replace(':', " -"),
+        desc: meta
+            .try_get("description")
+            .as_str()
+            .context(err_msg)?
+            .to_string(),
+        thumb: meta
+            .try_get("thumbnailUrl")
+            .as_str()
+            .context(err_msg)?
+            .to_string(),
+        access: meta.try_get("accessLevel").as_str().context(err_msg)? != "DENIED",
+        vod_url: url.to_string(),
+        ..Vod::default()
+    })
+}
+
 /// Fetches the HLS stream URL for a given Fight Pass video.
 pub async fn get_vod_stream_url(vod_id: u64) -> anyhow::Result<String> {
-    let client = if get_config().use_proxy {
-        &HTTP_PROXIED_CLIENT.load()
+    let vod_manifest: JSON = get_vod_manifest(vod_id, true).await?;
+
+    if let Some(url) = vod_manifest
+        .try_get("streams")
+        .try_get(0)
+        .try_get("url")
+        .as_str()
+    {
+        Ok(url.to_string())
     } else {
-        &*HTTP_CLIENT
-    };
-
-    let resp = client
-        .get(format!(
-            "https://dce-frontoffice.imggaming.com/api/v3/stream/vod/{vod_id}"
-        ))
-        .headers(generate_fight_pass_api_headers()?)
-        .bearer_auth(&get_config().auth_token)
-        .send()
-        .await
-        .context("An error occurred while trying request the callback URL for VOD stream")?;
-
-    if !resp.status().is_success() {
-        return Err(anyhow!(
-            "Server responded with an error to the callback URL request"
-        ));
-    }
-
-    let json_body: JSON = resp
-        .json()
-        .await
-        .context("Callback response contains invalid information")?;
-
-    if let Some(url) = json_body.try_get("playerUrlCallback").as_str() {
-        let resp = client
-            .get(url)
-            .send()
-            .await
-            .context("An error occurred while trying request VOD stream URL")?;
-
-        if !resp.status().is_success() {
-            return Err(anyhow!(
-                "Server responded with an error to the VOD stream request"
-            ));
-        }
-
-        let json_body: JSON = resp
-            .json()
-            .await
-            .context("Stream response contains invalid information")?;
-
-        if let Some(url) = json_body.try_get("hls").try_get(0).try_get("url").as_str() {
-            Ok(url.to_string())
-        } else {
-            Err(anyhow!("No stream URL present in the response"))
-        }
-    } else {
-        Err(anyhow!("No callback request URL present in the response"))
+        Err(anyhow!("No stream URL present in the response"))
     }
 }
 
