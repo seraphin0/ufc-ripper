@@ -62,24 +62,26 @@
             <label class="active">Region</label>
             <i>arrow_drop_down</i>
           </div>
-          <div class="field label small border round">
-            <input
-                v-model="txtEmail"
-                type="text"
-                autocomplete="off"
-                :disabled="busy"
-            >
-            <label>Email</label>
-          </div>
-          <div class="field label small border round">
-            <input
-                v-model="txtPass"
-                type="password"
-                autocomplete="off"
-                :disabled="busy"
-            >
-            <label>Password</label>
-          </div>
+          <form>
+            <div class="field label small border round">
+              <input
+                  v-model="txtEmail"
+                  type="email"
+                  autocomplete="off"
+                  :disabled="busy"
+              >
+              <label>Email</label>
+            </div>
+            <div class="field label small border round">
+              <input
+                  v-model="txtPass"
+                  type="password"
+                  autocomplete="off"
+                  :disabled="busy"
+              >
+              <label>Password</label>
+            </div>
+          </form>
         </div>
         <button
             :disabled="!store.isLoggedIn"

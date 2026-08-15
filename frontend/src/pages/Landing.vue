@@ -14,7 +14,7 @@
       <div class="field label suffix border round url-section__txt-link">
         <input
             v-model="txtLink"
-            type="text"
+            type="search"
             autocomplete="off"
             :disabled="busy"
             @keyup.enter="searchVOD(txtLink)"
