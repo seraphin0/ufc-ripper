@@ -137,16 +137,16 @@ export function useWSUtil() {
         return emitPromise('verify-url', url);
     }
 
-    function getPlayableVOD(url) {
-        return emitPromise('get-playable', url);
+    function getPlayableVOD(vodID) {
+        return emitPromise('get-playable', vodID);
     }
 
     function searchVODs(query, page) {
         return emitPromise('search-vods', query, page);
     }
 
-    function getFormats(url) {
-        return emitPromise('get-formats', url);
+    function getFormats(vodID) {
+        return emitPromise('get-formats', vodID);
     }
 
     function downloadVOD(VOD, isRestart) {

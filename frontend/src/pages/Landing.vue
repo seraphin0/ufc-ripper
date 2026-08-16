@@ -178,9 +178,9 @@
             :vShowDuration="store.config.showDuration"
             :vShowDesc="store.config.showDesc"
             :vBusyState="busy"
-            @play="(id) => playVOD(store.getFightPassURLByID(id))"
+            @play="(id) => playVOD(id)"
             @download="(id) => verifyVODURL(store.getFightPassURLByID(id))"
-            @getFormats="(id) => viewAvailableFormats(store.getFightPassURLByID(id))"
+            @getFormats="(id) => viewAvailableFormats(id)"
             @openExternal="(id) => store.openVODInFightPass(id)"
         ></BlockVODCard>
       </div>
@@ -377,12 +377,12 @@ function searchPreviousPage() {
   searchVOD(store.search.result.query, store.search.result.page - 1);
 }
 
-function playVOD(url) {
+function playVOD(vodID) {
   if (!store.isLoggedIn) return store.popError('You need to be logged in to play videos');
 
   switchBusyState();
 
-  getPlayableVOD(url)
+  getPlayableVOD(vodID)
       .then(VOD => modPlayVOD.show(VOD))
       .catch(store.popError)
       .finally(switchBusyState);
@@ -403,12 +403,12 @@ function verifyVODURL(url) {
       .finally(switchBusyState);
 }
 
-function viewAvailableFormats(url) {
+function viewAvailableFormats(vodID) {
   if (!store.isLoggedIn) return store.popError('You need to be logged in to check download formats');
 
   switchBusyState();
 
-  getFormats(url)
+  getFormats(vodID)
       .then((res) => {
         modViewFormats.setVODData(res);
         window.ui('#modViewFormats');

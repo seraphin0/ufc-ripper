@@ -21,12 +21,12 @@ use crate::{
     config_util::{get_config, is_debug, migrate_config, update_config, ConfigUpdate, UFCRConfig},
     fs_util::open_downloads_dir,
     net_util::{
-        download_media_tools, get_vod_meta, get_vod_stream_url, login_to_fight_pass, search_vods,
+        download_media_tools, get_vod_manifest, login_to_fight_pass, search_vods,
         update_proxied_client, JsonTryGet, JSON,
     },
     rt_util::QuitUnwrap,
     state_util::{clear_inactive_dlq_vods, get_dlq, Vod},
-    txt_util::create_uuid,
+    txt_util::{create_uuid, get_vod_id_from_url},
 };
 
 // Statics
@@ -298,11 +298,16 @@ async fn handle_search_vods_event(ack: AckSender, Data(data): Data<JSON>) {
 /// Handles the `verify-url` WS event.
 async fn handle_verify_url_event(ack: AckSender, Data(data): Data<JSON>) {
     if let Ok(url) = serde_json::from_value::<String>(data) {
-        match get_vod_meta(url.as_str()).await {
-            Ok(mut meta) => {
-                meta.q_id = create_uuid();
+        let vod_id = match get_vod_id_from_url(url.as_str()) {
+            Ok(id) => id,
+            Err(error) => return send_error(ack, error),
+        };
 
-                ack.send(meta).ok();
+        match get_vod_manifest(vod_id, false).await {
+            Ok(mut vod) => {
+                vod.q_id = create_uuid();
+
+                ack.send(vod).ok();
             }
             Err(error) => send_error(ack, error),
         }
@@ -313,8 +318,8 @@ async fn handle_verify_url_event(ack: AckSender, Data(data): Data<JSON>) {
 
 /// Handles the `get-playable` WS event.
 async fn handle_get_playable_event(ack: AckSender, Data(data): Data<JSON>) {
-    if let Ok(url) = serde_json::from_value::<String>(data) {
-        match get_vod_meta(url.as_str()).await {
+    if let Ok(vod_id) = serde_json::from_value::<u64>(data) {
+        match get_vod_manifest(vod_id, true).await {
             Ok(mut vod) => {
                 if !vod.access {
                     return send_error(
@@ -323,15 +328,9 @@ async fn handle_get_playable_event(ack: AckSender, Data(data): Data<JSON>) {
                     );
                 }
 
-                match get_vod_stream_url(vod.id).await {
-                    Ok(hls) => {
-                        vod.hls = hls;
-                        vod.q_id = create_uuid();
+                vod.q_id = create_uuid();
 
-                        ack.send(vod).ok();
-                    }
-                    Err(error) => send_error(ack, error),
-                }
+                ack.send(vod).ok();
             }
             Err(error) => send_error(ack, error),
         }
@@ -346,8 +345,8 @@ async fn handle_download_event(ack: AckSender, Data(mut data): Data<JSON>) {
         serde_json::from_value::<Vod>(data.try_get_mut(0, &mut JSON::Null).take()),
         data.try_get(1).as_bool(),
     ) {
-        match get_vod_stream_url(vod.id).await {
-            Ok(hls) => vod.hls = hls,
+        match get_vod_manifest(vod.id, true).await {
+            Ok(new_vod) => vod.hls = new_vod.hls,
             Err(error) => return send_error(ack, error),
         }
 
@@ -403,11 +402,10 @@ fn handle_cancel_download_event(ack: AckSender, Data(data): Data<JSON>) {
 
 /// Handles the `get-formats` WS event.
 async fn handle_get_formats_event(ack: AckSender, Data(data): Data<JSON>) {
-    if let Some(url) = data.as_str() {
+    if let Ok(vod_id) = serde_json::from_value::<u64>(data) {
         let formats_result = async {
-            let mut vod = get_vod_meta(url).await?;
-            let hls = get_vod_stream_url(vod.id).await?;
-            let formats = get_vod_formats(&hls).await?;
+            let mut vod = get_vod_manifest(vod_id, true).await?;
+            let formats = get_vod_formats(&vod.hls).await?;
 
             vod.q_id = create_uuid();
 
@@ -422,6 +420,6 @@ async fn handle_get_formats_event(ack: AckSender, Data(data): Data<JSON>) {
 
         send_result(ack, formats_result);
     } else {
-        send_error(ack, "Invalid url in the formats request");
+        send_error(ack, "Invalid VOD ID in the formats request");
     }
 }

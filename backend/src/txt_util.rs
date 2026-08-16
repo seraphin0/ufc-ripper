@@ -13,7 +13,7 @@ pub fn create_uuid() -> String {
 }
 
 /// Validates a Fight Pass VOD URL and returns the VOD ID.
-pub fn get_vod_id_from_url(url: &str) -> anyhow::Result<String> {
+pub fn get_vod_id_from_url(url: &str) -> anyhow::Result<u64> {
     let err_msg = "Provided URL is invalid";
 
     match Url::parse(url)
@@ -23,7 +23,7 @@ pub fn get_vod_id_from_url(url: &str) -> anyhow::Result<String> {
         .nth(1)
     {
         Some(split_id) => match split_id.split('/').next() {
-            Some(vod_id) => Ok(vod_id.to_string()),
+            Some(vod_id) => Ok(vod_id.to_string().parse().context(err_msg)?),
             None => Err(anyhow!(err_msg)),
         },
         None => Err(anyhow!(err_msg)),

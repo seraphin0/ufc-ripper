@@ -31,7 +31,6 @@ use crate::{
     fs_util::{write_file_to_disk, WebAssets},
     rt_util::QuitUnwrap,
     state_util::Vod,
-    txt_util::get_vod_id_from_url,
     ws_util::{create_ws_layer, emit_config_update},
 };
 
@@ -475,8 +474,9 @@ pub async fn search_vods(query: &str, page: u64) -> anyhow::Result<JSON> {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 /// Retrieves the complete manifest for the given Fight Pass VOD.
-pub async fn get_vod_manifest(vod_id: u64, streams: bool) -> anyhow::Result<JSON> {
+pub async fn get_vod_manifest(vod_id: u64, streams: bool) -> anyhow::Result<Vod> {
     enum ReqStatus {
         Success(JSON),
         NeedsRefresh,
@@ -555,64 +555,58 @@ pub async fn get_vod_manifest(vod_id: u64, streams: bool) -> anyhow::Result<JSON
         Ok::<ReqStatus, anyhow::Error>(ReqStatus::Success(json_body))
     };
 
+    // Creates and returns a `Vod` instance from VOD manifest JSON
+    let create_vod_from_json_manifest = |manifest: &JSON| {
+        let err_msg = "VOD metadata response does not match the expected format";
+
+        let stream_url = if streams {
+            match manifest.try_get("streams").try_get(0).try_get("url").as_str() {
+                Some(url) => url.to_string(),
+                None => Err(anyhow!("No stream URL present in the response"))?,
+            }
+        } else {
+            String::new()
+        };
+
+        let vod = Vod {
+            id: manifest.try_get("id").as_u64().context(err_msg)?,
+            title: manifest
+                .try_get("title")
+                .as_str()
+                .context(err_msg)?
+                .to_string()
+                .replace(':', " -"),
+            desc: manifest
+                .try_get("description")
+                .as_str()
+                .context(err_msg)?
+                .to_string(),
+            thumb: manifest
+                .try_get("thumbnailUrl")
+                .as_str()
+                .context(err_msg)?
+                .to_string(),
+            access: manifest.try_get("accessLevel").as_str().context(err_msg)? != "DENIED",
+            vod_url: get_fight_pass_domain(),
+            hls: stream_url,
+            ..Vod::default()
+        };
+
+        Ok::<Vod, anyhow::Error>(vod)
+    };
+
     match run_request().await? {
-        ReqStatus::Success(vod_meta) => Ok(vod_meta),
+        ReqStatus::Success(vod_meta) => Ok(create_vod_from_json_manifest(&vod_meta)?),
         ReqStatus::NeedsRefresh => {
             refresh_access_token().await?;
 
             match run_request().await? {
-                ReqStatus::Success(vod_meta) => Ok(vod_meta),
+                ReqStatus::Success(vod_meta) => Ok(create_vod_from_json_manifest(&vod_meta)?),
                 ReqStatus::NeedsRefresh => Err(anyhow!(
                     r#"The server responded to the request as "Unauthorized". Please try logging in with your UFC Fight Pass account again"#
                 )),
             }
         }
-    }
-}
-
-/// Retrieves metadata for the given Fight Pass VOD.
-pub async fn get_vod_meta(url: &str) -> anyhow::Result<Vod> {
-    let vod_id = get_vod_id_from_url(url)?;
-    let meta = get_vod_manifest(vod_id.parse().context("Invalid VOD ID received")?, false).await?;
-    let err_msg = "VOD manifest response does not match the expected format";
-
-    Ok(Vod {
-        id: meta.try_get("id").as_u64().context(err_msg)?,
-        title: meta
-            .try_get("title")
-            .as_str()
-            .context(err_msg)?
-            .to_string()
-            .replace(':', " -"),
-        desc: meta
-            .try_get("description")
-            .as_str()
-            .context(err_msg)?
-            .to_string(),
-        thumb: meta
-            .try_get("thumbnailUrl")
-            .as_str()
-            .context(err_msg)?
-            .to_string(),
-        access: meta.try_get("accessLevel").as_str().context(err_msg)? != "DENIED",
-        vod_url: url.to_string(),
-        ..Vod::default()
-    })
-}
-
-/// Fetches the HLS stream URL for a given Fight Pass video.
-pub async fn get_vod_stream_url(vod_id: u64) -> anyhow::Result<String> {
-    let vod_manifest: JSON = get_vod_manifest(vod_id, true).await?;
-
-    if let Some(url) = vod_manifest
-        .try_get("streams")
-        .try_get(0)
-        .try_get("url")
-        .as_str()
-    {
-        Ok(url.to_string())
-    } else {
-        Err(anyhow!("No stream URL present in the response"))
     }
 }
 
@@ -634,6 +628,14 @@ fn generate_fight_pass_api_headers() -> anyhow::Result<HeaderMap> {
     );
 
     Ok(headers)
+}
+
+// Generates the Fight Pass domain URL considering the logged in account's region
+fn get_fight_pass_domain() -> String {
+    match get_config().region.as_str() {
+        "dce.ufcbrazil" => "ufcfightpass.com.br".to_string(),
+        _ => "ufcfightpass.com".to_string(),
+    }
 }
 
 /// Deserializes and returns the `messages` array from a response.

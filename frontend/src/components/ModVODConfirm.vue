@@ -50,7 +50,7 @@
           class="border"
           title="Check available formats before downloading"
           :data-ui="`#${vID}`"
-          @click="$emit('onCheckFormats', vVODData.vodURL)"
+          @click="$emit('onCheckFormats', vVODData.id)"
       >
         <i>stock_media</i>
       </button>

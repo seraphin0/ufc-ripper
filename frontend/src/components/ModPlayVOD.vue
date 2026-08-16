@@ -16,7 +16,7 @@
       <button
           class="border"
           title="Check available formats for this video"
-          @click="$emit('onCheckFormats', modPlayVOD.VOD.vodURL)"
+          @click="$emit('onCheckFormats', modPlayVOD.VOD.id)"
       >
         <i>stock_media</i>
       </button>
