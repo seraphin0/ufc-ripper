@@ -11,22 +11,24 @@
     </div>
 
     <div class="url-section center-content">
-      <div class="field label suffix border round url-section__txt-link">
-        <input
-            v-model="txtLink"
-            type="search"
-            autocomplete="off"
-            :disabled="busy"
-            @keyup.enter="searchVOD(txtLink)"
-        >
-        <label>Link / Search</label>
-        <span class="helper">Insert the link to Fight Pass video or search query here</span>
-        <a
-            v-if="busy"
-            class="loader"
-        ></a>
-        <i v-else>link</i>
-      </div>
+      <form @keydown.enter.prevent>
+        <div class="field label suffix border round url-section__txt-link">
+          <input
+              v-model="txtLink"
+              type="search"
+              autocomplete="off"
+              :disabled="busy"
+              @keyup.enter="searchVOD(txtLink)"
+          >
+          <label>Search / Link</label>
+          <span class="helper">Insert the search query or link to Fight Pass video here (Enter key is search)</span>
+          <a
+              v-if="busy"
+              class="loader"
+          ></a>
+          <i v-else>link</i>
+        </div>
+      </form>
 
       <button
           class="square round large"
