@@ -50,7 +50,7 @@
           class="square round large"
           title="Get available formats"
           :disabled="busy"
-          @click="viewAvailableFormats(txtLink)"
+          @click="viewAvailableFormats(store.getIDFromFightPassURL(txtLink))"
       >
         <i>stock_media</i>
       </button>

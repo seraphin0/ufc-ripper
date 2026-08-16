@@ -135,6 +135,9 @@ export const useAppStore = defineStore('app', {
         getFightPassURLByID(id) {
             return `https://${this.getFPDomain}/video/${id}`;
         },
+        getIDFromFightPassURL(url) {
+            return Number(new URL(url).pathname.split("/").pop());
+        },
         openVODInFightPass(id) {
             window.open(this.getFightPassURLByID(id), '_blank');
         }
