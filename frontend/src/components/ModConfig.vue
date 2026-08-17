@@ -160,6 +160,19 @@
             <span></span>
           </label>
         </nav>
+        <nav class="v-switch">
+          <div class="max">
+            <h6>Clear search box</h6>
+            <div>Automatically clears the search input every time a download is started</div>
+          </div>
+          <label class="switch">
+            <input
+                v-model="modConfig.data.clearSearch"
+                type="checkbox"
+            >
+            <span></span>
+          </label>
+        </nav>
       </article>
 
       <article class="border round mod-config__content__section">

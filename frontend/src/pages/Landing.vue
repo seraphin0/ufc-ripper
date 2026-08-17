@@ -281,7 +281,7 @@ const {
   searchVODs,
   verifyURL,
   getPlayableVOD,
-  getFormats
+  getFormats,
 } = useWSUtil();
 
 initSocket();
@@ -331,7 +331,7 @@ function onBtnSearchHelpClick() {
 // ModPlayVOD
 function onModPlayVODViewFormats(url) {
   modPlayVOD.close();
-  viewAvailableFormats(url)
+  viewAvailableFormats(url);
 }
 
 function onModPlayVODDownload(VOD) {
@@ -346,7 +346,7 @@ function onModPlayVODDownload(VOD) {
 function onModViewFormatsDownload(VOD, format) {
   download({
     ...VOD,
-    customFormat: format.acodec === 'none' ? `${format.format_id}+bestaudio` : format.format_id
+    customFormat: format.acodec === 'none' ? `${format.format_id}+bestaudio` : format.format_id,
   });
   window.ui('#modViewFormats');
 }
@@ -428,7 +428,7 @@ function download(VOD) {
         store.addDownload(res);
         store.popInfo('Download started');
 
-        txtLink.value = '';
+        if (store.config.clearSearch) txtLink.value = '';
       })
       .catch(store.popError)
       .finally(switchBusyState);
