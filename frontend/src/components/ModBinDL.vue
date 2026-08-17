@@ -83,12 +83,13 @@ async function onBtnYesClick() {
   try {
     await getMediaTools(store.missingTools);
     await validateMediaTools();
-    if (store.missingTools.length) throw 'Failed to download third-party tools';
+    if (store.missingTools.length) throw 'Failed to download third-party media tools';
     window.ui('#modBinDL');
-    store.popSuccess('Third-party tools downloaded successfully');
+    store.popSuccess('Third-party media tools downloaded successfully');
   } catch (error) {
     store.popError(error);
-    modBinDL.resetDownloads();
+  } finally {
+    setTimeout(() => modBinDL.resetDownloads(), 1000);
   }
 }
 </script>

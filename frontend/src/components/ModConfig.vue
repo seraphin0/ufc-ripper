@@ -134,6 +134,15 @@
           <i>settings_backup_restore</i>
           Reset
         </button>
+        <nav class="v-switch">
+          <div class="max">
+            <h6>Media tools</h6>
+          </div>
+        </nav>
+        <button @click="store.showModRedownloadMediaToolsPrompt">
+          <i>browser_updated</i>
+          Re-download media tools
+        </button>
       </article>
 
       <article class="border round mod-config__content__section">
@@ -211,7 +220,9 @@
         <nav class="v-switch">
           <div class="max">
             <h6>Use temporary path</h6>
-            <div>Using a temporary path for download parts in a different drive (or a ramdisk) can decrease the build time of downloads significantly</div>
+            <div>Using a temporary path for download parts in a different drive (or a ramdisk) can decrease the build
+              time of downloads significantly
+            </div>
           </div>
           <label class="switch">
             <input
@@ -514,6 +525,16 @@
       This process will reset all of the configurations to default and log you out of the currently logged in Fight Pass
       account. Are you sure you want to continue?
     </ModMsgBox>
+    <ModMsgBox
+        vID="modRedownloadMediaToolsPrompt"
+        vIcon="browser_updated"
+        vTitle="Redownload third-party media tools"
+        vType="yes-no"
+        @onYes="onRedownloadMeidaTools"
+    >
+      This will erase all media tools and redownload them. Latest available versions will be downloaded. Are you sure
+      you want to continue?
+    </ModMsgBox>
   </div>
 </template>
 
@@ -522,6 +543,7 @@
 import {nextTick, onMounted, ref} from 'vue';
 // Store
 import {useAppStore} from '@/store';
+import {useModBinDLStore} from '@/store/modBinDL';
 // Modules
 import {useWSUtil} from '@/modules/ws-util';
 // Components
@@ -531,6 +553,7 @@ import ModMsgBox from '@/components/ModMsgBox.vue';
 // Store
 const store = useAppStore();
 const modConfig = store.modals.modConfig;
+const modBinDL = useModBinDLStore();
 
 // Local state
 const busy = ref(false);
@@ -541,7 +564,7 @@ const fail = (error) => {
 };
 
 // Websocket
-const {login, resetConfig, saveConfig} = useWSUtil();
+const {login, removeMediaTools, resetConfig, saveConfig, validateMediaTools} = useWSUtil();
 
 // Account
 const txtEmail = ref('');
@@ -588,6 +611,23 @@ function onConfigFileExport() {
   window.location.href = '/export_config';
 }
 
+// Re-download media tools
+async function onRedownloadMeidaTools() {
+  switchBusyState();
+
+  removeMediaTools()
+      .then(async () => {
+        await validateMediaTools();
+
+        if (store.missingTools.length) {
+          window.ui('#modConfig');
+          modBinDL.showModBinDL();
+        }
+      })
+      .catch(store.popError)
+      .finally(switchBusyState);
+}
+
 // Config reset
 function onConfigReset() {
   resetConfig()
@@ -611,7 +651,7 @@ function save(config) {
 onMounted(() =>
     nextTick(() => {
       configFileInput.value.addEventListener('change', onConfigFileImport);
-    })
+    }),
 );
 </script>
 

@@ -10,7 +10,7 @@ use rust_embed::RustEmbed;
 use tokio::{fs, io::AsyncWriteExt};
 
 use crate::{
-    app_util::is_container,
+    app_util::{get_app_root_dir, is_container},
     config_util::{get_config, is_debug},
     rt_util::QuitUnwrap,
 };
@@ -147,4 +147,19 @@ pub fn build_downloads_dir_path(org_dl_path: String) -> anyhow::Result<String> {
     } else {
         Ok(org_dl_path)
     }
+}
+
+/// Removes all bin files
+pub async fn remove_bins() -> anyhow::Result<()> {
+    let bins_dir = get_app_root_dir().join("bin");
+
+    if bins_dir.exists() {
+        fs::remove_dir_all(&bins_dir).await.context(
+            "Failed to remove media tools. Check UFC Ripper's app permissions or storage permissions",
+        )?;
+    }
+
+    fs::create_dir_all(&bins_dir).await.context(
+        r#"Failed to recreate the "bin" directory. Check UFC Ripper's app permissions or storage permissions"#,
+    )
 }

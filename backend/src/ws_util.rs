@@ -19,7 +19,7 @@ use crate::{
     app_util::{check_app_update, get_app_metadata},
     bin_util::{cancel_download, get_vod_formats, start_download, validate_bins},
     config_util::{get_config, is_debug, migrate_config, update_config, ConfigUpdate, UFCRConfig},
-    fs_util::open_downloads_dir,
+    fs_util::{open_downloads_dir, remove_bins},
     net_util::{
         download_media_tools, get_vod_manifest, login_to_fight_pass, search_vods,
         update_proxied_client, JsonTryGet, JSON,
@@ -75,6 +75,10 @@ fn handle_ws_client(socket: &SocketRef) {
     });
 
     socket.on("get-media-tools", handle_get_media_tools_event);
+
+    socket.on("remove-media-tools", |ack: AckSender| async move {
+        send_result(ack, remove_bins().await);
+    });
 
     socket.on("login", handle_login_event);
 

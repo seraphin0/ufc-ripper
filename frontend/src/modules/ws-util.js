@@ -179,6 +179,10 @@ export function useWSUtil() {
         return Promise.resolve();
     }
 
+    function removeMediaTools() {
+        return emitPromise('remove-media-tools');
+    }
+
     return {
         initSocket,
         getConfig,
@@ -194,6 +198,7 @@ export function useWSUtil() {
         clearDLQ,
         openDownloadsDir,
         validateMediaTools,
-        getMediaTools
+        getMediaTools,
+        removeMediaTools
     };
 }
