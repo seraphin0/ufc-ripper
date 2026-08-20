@@ -102,6 +102,7 @@ pub async fn init_server() {
     let app = Router::new()
         .nest_service("/", web_assets)
         .route("/export_config", get(handle_config_dl_req))
+        .route("/export_session", get(handle_session_dl_req))
         .layer(create_ws_layer())
         .layer(create_cors_layer());
 
@@ -179,10 +180,40 @@ async fn handle_config_dl_req() -> impl IntoResponse {
     };
     let body = Body::from(config_json);
     let headers = [
-        (header::CONTENT_TYPE, "text/json; charset=utf-8"),
+        (header::CONTENT_TYPE, "application/json; charset=utf-8"),
         (
             header::CONTENT_DISPOSITION,
-            "attachment; filename=\"config.json\"",
+            "attachment; filename=\"ufcr_config.json\"",
+        ),
+    ];
+
+    Ok((headers, body))
+}
+
+/// Sends the logged in Fight Pass session as a download.
+async fn handle_session_dl_req() -> impl IntoResponse {
+    let config = get_config();
+    let session = json!({
+        "region": config.region,
+        "user": config.user,
+        "refreshToken": config.refresh_token,
+        "authToken": config.auth_token
+    });
+    let session_json = match serde_json::to_string_pretty(&session) {
+        Ok(config) => config,
+        Err(err) => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to prepare JSON: {err}"),
+            ))
+        }
+    };
+    let body = Body::from(session_json);
+    let headers = [
+        (header::CONTENT_TYPE, "application/json; charset=utf-8"),
+        (
+            header::CONTENT_DISPOSITION,
+            "attachment; filename=\"ufcr_session.json\"",
         ),
     ];
 
@@ -560,7 +591,12 @@ pub async fn get_vod_manifest(vod_id: u64, streams: bool) -> anyhow::Result<Vod>
         let err_msg = "VOD metadata response does not match the expected format";
 
         let stream_url = if streams {
-            match manifest.try_get("streams").try_get(0).try_get("url").as_str() {
+            match manifest
+                .try_get("streams")
+                .try_get(0)
+                .try_get("url")
+                .as_str()
+            {
                 Some(url) => url.to_string(),
                 None => Err(anyhow!("No stream URL present in the response"))?,
             }

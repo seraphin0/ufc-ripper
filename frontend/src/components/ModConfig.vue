@@ -94,6 +94,18 @@
             @click="onBtnLoginClick"
         >Login
         </button>
+        <br>
+        <br>
+        <button
+            :disabled="!store.isLoggedIn"
+            @click="onBtnExportSessionClick"
+        >
+          <i>manage_accounts</i>
+          Export Fight Pass session
+        </button>
+        <br>
+        <br>
+        <span>An exported Fight Pass session can be imported using the "Import" feature in "Configuration management".</span>
       </article>
 
       <article class="border round mod-config__content__section mod-config__content__general">
@@ -599,6 +611,11 @@ function onBtnLoginClick() {
       })
       .catch(fail)
       .finally(switchBusyState);
+}
+
+// Fight Pass session export
+function onBtnExportSessionClick() {
+  window.location.href = '/export_session';
 }
 
 // Config import
