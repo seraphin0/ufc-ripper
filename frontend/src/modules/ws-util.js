@@ -68,7 +68,7 @@ export function useWSUtil() {
     function onDownloadProgress(qID, updates) {
         store.downloads[qID] = {
             ...store.downloads[qID],
-            ...updates
+            ...updates,
         };
     }
 
@@ -96,7 +96,7 @@ export function useWSUtil() {
     async function getDLQ() {
         try {
             store.downloads = {
-                ...(await emitPromise('get-dlq'))
+                ...(await emitPromise('get-dlq')),
             };
         } catch (error) {
             store.popError(error);
@@ -105,6 +105,10 @@ export function useWSUtil() {
 
     async function saveConfig(newConfig) {
         store.config = await emitPromise('save-config', newConfig);
+    }
+
+    async function importSession(newSession) {
+        store.config = await emitPromise('import-session', newSession);
     }
 
     async function resetConfig() {
@@ -160,7 +164,7 @@ export function useWSUtil() {
     async function clearDLQ() {
         try {
             store.downloads = {
-                ...(await emitPromise('clear-dlq'))
+                ...(await emitPromise('clear-dlq')),
             };
         } catch (error) {
             store.popError(error);
@@ -187,6 +191,7 @@ export function useWSUtil() {
         initSocket,
         getConfig,
         saveConfig,
+        importSession,
         resetConfig,
         login,
         verifyURL,
@@ -199,6 +204,6 @@ export function useWSUtil() {
         openDownloadsDir,
         validateMediaTools,
         getMediaTools,
-        removeMediaTools
+        removeMediaTools,
     };
 }

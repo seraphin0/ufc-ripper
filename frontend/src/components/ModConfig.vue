@@ -94,18 +94,31 @@
             @click="onBtnLoginClick"
         >Login
         </button>
-        <br>
-        <br>
+        <nav class="v-switch">
+          <div class="max">
+            <h6>Fight Pass session management</h6>
+          </div>
+        </nav>
+        <button>
+          <i>person_add</i>
+          Import session
+          <input
+              ref="sessionFileInput"
+              type="file"
+              id="session-import"
+              accept=".json"
+          />
+        </button>
         <button
             :disabled="!store.isLoggedIn"
             @click="onBtnExportSessionClick"
         >
-          <i>manage_accounts</i>
-          Export Fight Pass session
+          <i>person_shield</i>
+          Export session
         </button>
         <br>
         <br>
-        <span>An exported Fight Pass session can be imported using the "Import" feature in "Configuration management".</span>
+        <span>An exported Fight Pass session can be imported as a login without exposing the password.</span>
       </article>
 
       <article class="border round mod-config__content__section mod-config__content__general">
@@ -139,7 +152,7 @@
           />
         </button>
         <button @click="onConfigFileExport">
-          <i>upload_file</i>
+          <i>file_export</i>
           Export
         </button>
         <button @click="store.showModConfigResetPrompt">
@@ -589,7 +602,7 @@ const fail = (error) => {
 };
 
 // Websocket
-const {login, removeMediaTools, resetConfig, saveConfig, validateMediaTools} = useWSUtil();
+const {importSession, login, removeMediaTools, resetConfig, saveConfig, validateMediaTools} = useWSUtil();
 
 // Account
 const txtEmail = ref('');
@@ -616,6 +629,24 @@ function onBtnLoginClick() {
 // Fight Pass session export
 function onBtnExportSessionClick() {
   window.location.href = '/export_session';
+}
+
+// Fight Pass session import
+let sessionFileInput = ref(null);
+
+async function onSessionFileImport() {
+  const file = sessionFileInput.value?.files[0];
+
+  if (file) {
+    try {
+      importSessionFile(JSON.parse(await file.text()));
+    } catch (error) {
+      store.popError('Imported file is not a valid session file');
+      console.error(error);
+    } finally {
+      sessionFileInput.value.value = null;
+    }
+  }
 }
 
 // Config import
@@ -678,8 +709,18 @@ function save(config) {
       .catch(fail);
 }
 
+function importSessionFile(session) {
+  importSession(session)
+      .then(() => {
+        store.popSuccess('Fight Pass session imported successfully');
+        window.ui('#modConfig');
+      })
+      .catch(fail);
+}
+
 onMounted(() =>
     nextTick(() => {
+      sessionFileInput.value.addEventListener('change', onSessionFileImport);
       configFileInput.value.addEventListener('change', onConfigFileImport);
     }),
 );
@@ -809,6 +850,10 @@ onMounted(() =>
     }
 
     &__account {
+      & > .v-switch {
+        margin-bottom: 20rem;
+      }
+
       &__user {
         margin-bottom: 20rem;
       }

@@ -5,7 +5,7 @@ use std::{
 };
 
 use once_cell::sync::OnceCell;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use socketioxide::{
     extract::{AckSender, Data, SocketRef},
@@ -22,7 +22,7 @@ use crate::{
     fs_util::{open_downloads_dir, remove_bins},
     net_util::{
         download_media_tools, get_vod_manifest, login_to_fight_pass, search_vods,
-        update_proxied_client, JsonTryGet, JSON,
+        update_proxied_client, JsonTryGet, LoginSession, JSON,
     },
     rt_util::QuitUnwrap,
     state_util::{clear_inactive_dlq_vods, get_dlq, Vod},
@@ -59,6 +59,8 @@ fn handle_ws_client(socket: &SocketRef) {
     });
 
     socket.on("save-config", handle_save_config_event);
+
+    socket.on("import-session", handle_import_session_event);
 
     socket.on("reset-config", handle_reset_config_event);
 
@@ -224,6 +226,59 @@ async fn handle_save_config_event(ack: AckSender, Data(data): Data<JSON>) {
         send_error(
             ack,
             "Invalid configuration format. Configuration data is not valid JSON",
+        );
+    }
+}
+
+/// Handles the `import-session` WS event.
+async fn handle_import_session_event(ack: AckSender, Data(data): Data<JSON>) {
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Session {
+        pub region: String,
+        pub user: String,
+        pub refresh_token: String,
+        pub auth_token: String,
+    }
+
+    if let Ok(imported_session) = serde_json::from_value::<Session>(data.clone()) {
+        if imported_session.auth_token.is_empty() || imported_session.refresh_token.is_empty() {
+            return send_error(
+                ack,
+                "Imported session does not contain necessary tokens. Import process was aborted",
+            );
+        }
+
+        if imported_session.user.is_empty() {
+            return send_error(
+                ack,
+                "Imported session does not have a proper user identification. Import process was aborted",
+            );
+        }
+
+        match imported_session.region.as_str() {
+            "dce.ufc" | "dce.ufcbrazil" => {
+                update_config(ConfigUpdate::Region(imported_session.region)).await;
+                update_config(ConfigUpdate::Tokens(LoginSession {
+                    user: imported_session.user,
+                    refresh: imported_session.refresh_token,
+                    auth: imported_session.auth_token,
+                }))
+                .await;
+
+                ack.send(get_config().as_ref()).ok();
+            }
+            _ => {
+                send_error(
+                    ack,
+                    "Imported session contains an incorrect region setting. Import process was aborted",
+                );
+            }
+        }
+    } else {
+        send_error(
+            ack,
+            "Imported session is invalid. Import process was aborted",
         );
     }
 }

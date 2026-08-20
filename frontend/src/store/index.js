@@ -61,7 +61,7 @@ export const useAppStore = defineStore('app', {
         }
     }),
     getters: {
-        isLoggedIn: (state) => !!state.config.authToken,
+        isLoggedIn: (state) => (state.config.authToken && state.config.refreshToken),
         downloadQueue: (state) => Object.values(state.downloads).sort((a, b) => b.idx - a.idx),
         activeDownloads() {
             return this.downloadQueue.filter((dl) => dl.status === 'downloading').length;
