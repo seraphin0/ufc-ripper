@@ -228,14 +228,32 @@
     <ModSearchHelp></ModSearchHelp>
     <ModSupport></ModSupport>
     <ModMsgBox
+        class="mod-update-prompt"
         vID="modUpdatePrompt"
         vIcon="upgrade"
         vTitle="App update available"
         vType="yes-no"
         @onYes="store.openAppDownloadPage"
     >
-      A new update <b>(v{{ store.update.version }})</b> for UFC Ripper is available. Would you like to visit the
-      download page?
+      <span>A new update <b>(v{{ store.update.version }})</b> for UFC Ripper is available. </span>
+
+      <div
+          v-if="store.update.changes?.length"
+          class="mod-update-prompt__changes"
+      >
+        <p
+            class="mod-update-prompt__changes__title"
+        >
+          What's new:
+        </p>
+        <ul>
+          <li v-for="change in store.update.changes" :key="change">
+            {{ change }}
+          </li>
+        </ul>
+      </div>
+
+      <span>Would you like to visit the download page?</span>
     </ModMsgBox>
 
     <!-- Overlay -->
@@ -537,6 +555,27 @@ function download(VOD) {
     & > p > .v-anchor {
       font-weight: bold;
       font-size: 15rem;
+    }
+  }
+
+  .mod-update-prompt {
+    &__changes {
+      margin: 18rem 0;
+
+      ul {
+        padding-left: 25rem;
+
+        li {
+          margin-bottom: 5rem;
+        }
+      }
+
+      &__title {
+        margin-bottom: 8rem;
+        font-size: 15rem;
+        font-weight: bold;
+        color: var(--primary);
+      }
     }
   }
 }

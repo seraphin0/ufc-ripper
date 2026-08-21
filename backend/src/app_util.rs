@@ -86,16 +86,19 @@ pub async fn check_app_update() -> anyhow::Result<JSON> {
     let latest = remote_meta.try_get("latest");
     let version =
         Version::parse(latest.try_get("version").as_str().context(err_msg)?).context(err_msg)?;
-    let release_url = latest
-        .try_get("release")
-        .try_get("url")
-        .as_str()
-        .context(err_msg)?;
 
     if version > Version::parse(get_app_metadata().version).context(err_msg)? {
+        let changes = latest.try_get("changes").as_array().context(err_msg)?;
+        let release_url = latest
+            .try_get("release")
+            .try_get("url")
+            .as_str()
+            .context(err_msg)?;
+
         Ok(json!({
             "updatable": true,
             "version": version.to_string(),
+            "changes": changes,
             "url": release_url
         }))
     } else {

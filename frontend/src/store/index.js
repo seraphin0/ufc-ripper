@@ -15,6 +15,7 @@ export const useAppStore = defineStore('app', {
         update: {
             updatable: false,
             version: '',
+            changes: [],
             url: ''
         },
         fpMeta: {

@@ -1,6 +1,12 @@
 {
   "latest": {
     "version": "4.1.0",
+    "changes": [
+      "Fixed errors when logging in",
+      "Fixed errors when fetching VOD formats",
+      "Added support for specifying a custom user agent and API version in the config file",
+      "Updated text in configuration for better clarity"
+    ],
     "release": {
       "url": "https://github.com/m4heshd/ufc-ripper/releases/tag/v4.1.0"
     }
